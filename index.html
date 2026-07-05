@@ -31,7 +31,7 @@ const { useState, useRef, useEffect } = React;
 // ⚠️ IMPORTANT: put your own Anthropic API key between the quotes below.
 // This key will be visible to anyone who views this page's source.
 // Only use a key with a small balance you're comfortable exposing.
-const ANTHROPIC_API_KEY = "PASTE_YOUR_API_KEY_HERE";
+// No API key here anymore — the real key lives safely on the server (Vercel).
 
 function VantaMark({ size = 32, pulsing = false }) {
   return (
@@ -144,10 +144,6 @@ function VantaApp(){
 
   async function sendMessage(){
     if(!input.trim() && !pendingFile) return;
-    if(!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY.includes("PASTE_YOUR")){
-      setError("No API key set yet. Add your Anthropic API key in the code.");
-      return;
-    }
     setError("");
     const userMsg={role:"user",text:input.trim(),file:pendingFile?{name:pendingFile.name,type:pendingFile.type}:null};
     const newMessages=[...messages,userMsg];
@@ -169,20 +165,10 @@ function VantaApp(){
         .map(m=>({role:m.role,content:m.text||"(attached file)"}));
       apiMessages.push({role:"user",content});
 
-      const response=await fetch("https://api.anthropic.com/v1/messages",{
+      const response=await fetch("/api/chat",{
         method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version":"2023-06-01",
-          "anthropic-dangerous-direct-browser-access":"true"
-        },
-        body:JSON.stringify({
-          model:"claude-sonnet-4-6",
-          max_tokens:1000,
-          system:"You are Vanta, a professional AI assistant. Reply in the same language the user writes in. Be concise, direct, and useful.",
-          messages:apiMessages
-        })
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({messages:apiMessages})
       });
       const data=await response.json();
       if(data.error){ throw new Error(data.error.message||"API error"); }
